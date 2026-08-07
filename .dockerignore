@@ -1,0 +1,10 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+Rem God/
+database/
+.claude/
+.env
+bot_users.json
