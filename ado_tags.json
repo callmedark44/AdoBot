@@ -1,0 +1,66 @@
+{
+  "danbooru": [
+    "ado_(ado1024imokenp)",
+    "ado_(adobarune)",
+    "ado_(eknv3255)",
+    "ado_(kenkon_no_washi)",
+    "ado_(kirby)",
+    "ado_(mochizuki_ado)",
+    "ado_(singer)",
+    "ado_(utaite)",
+    "ado_(utaite)_(cosplay)",
+    "ado_bakuno",
+    "ado_box",
+    "ado_n",
+    "ado_yoshino1254"
+  ],
+  "safebooru": [
+    "ado",
+    "ado_(ado1024imokenp)",
+    "ado_(adonki)",
+    "ado_(artist)",
+    "ado_(kirby)",
+    "ado_(plane)",
+    "ado_(singer)",
+    "ado_(utaite)",
+    "ado_(utaite)_(cosplay)",
+    "ado_artist",
+    "ado_benchara",
+    "ado_box",
+    "ado_edem",
+    "ado_n",
+    "ado_yoshino1254"
+  ],
+  "yande": [
+    "ado_(utaite)",
+    "ado_n"
+  ],
+  "nekosia": [],
+  "eshuushuu": [
+    {
+      "title": "Ado",
+      "tag_id": 59960,
+      "type": 4,
+      "type_name": "Character",
+      "usage_count": 5
+    },
+    {
+      "title": "Ado",
+      "tag_id": 32261,
+      "type": 3,
+      "type_name": "Artist",
+      "usage_count": 3
+    }
+  ],
+  "zerochan": [
+    "Ado (Nico Nico Singer)",
+    "Ado (Singer)",
+    "Ado Singer",
+    "Nico Nico Singer",
+    "Usseewa (Song)",
+    "Odo (Gigap)",
+    "Readymade",
+    "Giragira (Song)",
+    "Kyougen (Song)"
+  ]
+}
