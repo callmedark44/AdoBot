@@ -12,7 +12,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy app source
 COPY . .
 
-# runtime.txt pins python-3.12; we already use the 3.12 image above.
+# Persistent data: /data survives Railway redeploy via a mounted volume
+ENV DATA_DIR=/data
+VOLUME ["/data"]
 EXPOSE 8080
 
 # bot.py reads PORT from env (Railway sets it)
