@@ -14,7 +14,6 @@ COPY . .
 
 # Persistent data: /data survives Railway redeploy via a mounted volume
 ENV DATA_DIR=/data
-VOLUME ["/data"]
 EXPOSE 8080
 
 # bot.py reads PORT from env (Railway sets it)
