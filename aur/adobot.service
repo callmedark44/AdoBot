@@ -1,0 +1,23 @@
+[Unit]
+Description=AdoBot Telegram bot (Ado art fetcher)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+StateDirectory=adobot
+WorkingDirectory=/usr/share/adobot
+Environment=DATA_DIR=/var/lib/adobot
+EnvironmentFile=-/etc/adobot.env
+ExecStart=/usr/bin/python /usr/share/adobot/bot.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/adobot
+
+[Install]
+WantedBy=multi-user.target

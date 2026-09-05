@@ -5,3 +5,8 @@ __pycache__/
 Rem God/
 database/
 .claude/
+# makepkg artifacts
+*.pkg.tar.*
+aur/src/
+aur/pkg/
+aur/AdoBot/

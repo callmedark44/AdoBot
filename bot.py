@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Telegram bot: pick a hololive member -> source -> tag, fetch via existing workers, send, delete."""
-import asyncio, html, importlib, json, os, re, threading
+import asyncio, html, importlib, json, os, re, sys, threading
 from dotenv import load_dotenv; load_dotenv()
 
 import shared
@@ -730,4 +730,25 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    if any(a == "--token" or a == "-token" or a.startswith("--token=") for a in sys.argv[1:]):
+        token = None
+        args = sys.argv[1:]
+        for n, a in enumerate(args):
+            if a in ("--token", "-token") and n + 1 < len(args):
+                token = args[n + 1]
+            elif a.startswith("--token="):
+                token = a.split("=", 1)[1]
+        if not token:
+            raise SystemExit("usage: adobot --token <bot-token>")
+        env_file = os.getenv("ADOBOT_ENV", "/etc/adobot.env")
+        lines = []
+        if os.path.exists(env_file):
+            with open(env_file, encoding="utf-8") as f:
+                lines = [l for l in f.read().splitlines() if not l.startswith("BOT_TOKEN=")]
+        lines.append(f"BOT_TOKEN={token}")
+        with open(env_file, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+        os.chmod(env_file, 0o600)
+        print(f"token saved to {env_file}; then: systemctl restart adobot")
+    else:
+        asyncio.run(main())

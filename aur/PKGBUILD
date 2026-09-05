@@ -1,0 +1,33 @@
+# Maintainer: AdoBot <https://github.com/callmedark44/AdoBot>
+pkgname=adobot-git
+pkgver=r8.661406c
+pkgrel=1
+pkgdesc='Telegram bot that fetches Ado art from boorus'
+arch=('any')
+url='https://github.com/callmedark44/AdoBot'
+license=('custom:unknown')
+depends=('python' 'python-aiogram' 'python-aiohttp-socks' 'python-dotenv'
+         'python-pillow' 'python-requests' 'python-urllib3')
+makedepends=('git')
+provides=('adobot')
+conflicts=('adobot')
+source=('git+https://github.com/callmedark44/AdoBot.git'
+        'adobot.service')
+sha256sums=('SKIP'
+            'SKIP')
+
+pkgver() {
+  cd AdoBot
+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+package() {
+  cd AdoBot
+  install -dm755 "$pkgdir/usr/share/adobot/workers" "$pkgdir/usr/share/adobot/database" "$pkgdir/usr/bin"
+  install -Dm644 bot.py shared.py bot_data.py ado_tags.json -t "$pkgdir/usr/share/adobot/"
+  install -Dm644 workers/*.py -t "$pkgdir/usr/share/adobot/workers/"
+  touch "$pkgdir/usr/share/adobot/database/.keep"
+  printf '#!/bin/sh\nexec /usr/bin/python /usr/share/adobot/bot.py "$@"\n' > "$pkgdir/usr/bin/adobot"
+  chmod 755 "$pkgdir/usr/bin/adobot"
+  install -Dm644 "$srcdir/adobot.service" -t "$pkgdir/usr/lib/systemd/system/"
+}

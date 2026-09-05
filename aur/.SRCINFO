@@ -1,0 +1,23 @@
+pkgbase = adobot-git
+	pkgdesc = Telegram bot that fetches Ado art from boorus
+	pkgver = r8.661406c
+	pkgrel = 1
+	url = https://github.com/callmedark44/AdoBot
+	arch = any
+	license = custom:unknown
+	makedepends = git
+	depends = python
+	depends = python-aiogram
+	depends = python-aiohttp-socks
+	depends = python-dotenv
+	depends = python-pillow
+	depends = python-requests
+	depends = python-urllib3
+	provides = adobot
+	conflicts = adobot
+	source = git+https://github.com/callmedark44/AdoBot.git
+	source = adobot.service
+	sha256sums = SKIP
+	sha256sums = SKIP
+
+pkgname = adobot-git
