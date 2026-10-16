@@ -207,13 +207,16 @@ class BaseDownloader:
                 self.downloaded_count += 1
                 self.downloaded_bytes += downloaded
                 self.dl_history.add(filename)
-                save_history(self.site_root, self.dl_history)
+                # Everything below is disk/CPU heavy (JSON dump, sqlite, image
+                # hashing/rewrite); off the loop so the 8 download workers keep running.
+                await asyncio.to_thread(save_history, self.site_root, self.dl_history)
 
                 # Perceptual dedup: kill duplicates before they reach the send queue.
                 # Filename already sits in dl_history, so it is never fetched again;
                 # the phash row outlives the (soon deleted) file — see dedup_store.
                 try:
-                    dup = dedup_store.get_store().check_and_add(filepath, site=self.name)
+                    dup = await asyncio.to_thread(
+                        lambda: dedup_store.get_store().check_and_add(filepath, site=self.name))
                 except Exception as e:
                     dup = None
                     self.log(f"[dedup] check failed for {filename}: {e}")
@@ -229,10 +232,10 @@ class BaseDownloader:
                 self.log(f"[SUCCESS] Downloaded {filename} ({self.downloaded_count}/{self.total_to_download}) [{pct}%]")
 
                 # Bookkeeping must not fail the download or trigger retries
+                rel_path = os.path.relpath(filepath, MASTER_FOLDER)
                 try:
-                    rel_path = os.path.relpath(filepath, MASTER_FOLDER)
-                    add_to_gallery(self.name, filename, rel_path, tags_list, artists)
-                    write_image_metadata(filepath, tags_list, artists, self.name)
+                    await asyncio.to_thread(add_to_gallery, self.name, filename, rel_path, tags_list, artists)
+                    await asyncio.to_thread(write_image_metadata, filepath, tags_list, artists, self.name)
                 except Exception as e:
                     self.log(f"[post-process] {e}")
 

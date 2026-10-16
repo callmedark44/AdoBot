@@ -20,7 +20,6 @@ os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
 
 DEFAULT_AMOUNT = 5
 _APP_LOOP = None
-_LOOP_LOCK = threading.Lock()
 
 PAGE_SIZE = 10
 ALBUM_MAX = 10  # Telegram hard cap for media-group albums
