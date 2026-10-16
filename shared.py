@@ -8,6 +8,8 @@ import hashlib
 import urllib3
 from PIL import Image, PngImagePlugin
 
+import dedup_store
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,6 +17,10 @@ MASTER_FOLDER = os.path.normpath(os.path.join(os.getenv("DATA_DIR", BASE_DIR), "
 HISTORY_LOCK = threading.Lock()
 GALLERY_LOCK = threading.RLock()
 STOP_EVENTS = {}
+
+# How many phash-duplicates the current worker run killed (see _async_download_file).
+# Read/reset by bot.py's _run_worker to top up whatever the user asked for.
+DUP_STATS = {"killed": 0}
 
 WAIFU_TAG_MAP = {}
 
@@ -202,6 +208,22 @@ class BaseDownloader:
                 self.downloaded_bytes += downloaded
                 self.dl_history.add(filename)
                 save_history(self.site_root, self.dl_history)
+
+                # Perceptual dedup: kill duplicates before they reach the send queue.
+                # Filename already sits in dl_history, so it is never fetched again;
+                # the phash row outlives the (soon deleted) file — see dedup_store.
+                try:
+                    dup = dedup_store.get_store().check_and_add(filepath, site=self.name)
+                except Exception as e:
+                    dup = None
+                    self.log(f"[dedup] check failed for {filename}: {e}")
+                if dup is not None and dup.is_duplicate:
+                    DUP_STATS["killed"] += 1
+                    try:
+                        if os.path.exists(filepath): os.remove(filepath)
+                    except OSError: pass
+                    self.log(f"[DEDUP] removed duplicate {filename} (already sent as {os.path.basename(dup.matched_path)})")
+                    return False
 
                 pct = max(0, min(100, int(self.downloaded_bytes * 100 / self.total_bytes))) if self.total_bytes > 0 else 0
                 self.log(f"[SUCCESS] Downloaded {filename} ({self.downloaded_count}/{self.total_to_download}) [{pct}%]")

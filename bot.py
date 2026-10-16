@@ -24,6 +24,7 @@ _LOOP_LOCK = threading.Lock()
 
 PAGE_SIZE = 10
 ALBUM_MAX = 10  # Telegram hard cap for media-group albums
+MAX_FETCH_ROUNDS = 5  # dedup top-up: extra worker runs until the user really got `count` fresh images
 
 # (key, label, report_key)
 SOURCES = [
@@ -287,11 +288,22 @@ _FETCH_LOCK = threading.Lock()
 IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".webm", ".gif", ".bmp", ".tiff", ".tif"}
 
 def _run_worker(skey, tag, net_config, count):
+    """Run one fetch round; returns how many phash-duplicates the round killed."""
     mod_name, fn_name, extractor = FETCHERS[skey]
     mod = importlib.import_module(mod_name)
     fn = getattr(mod, fn_name)
     args = extractor(tag, net_config, count)
+    shared.DUP_STATS["killed"] = 0
     fn(*args)
+    return shared.DUP_STATS["killed"]
+
+def _next_round(count, queued, killed, round_no):
+    """Deficit to fetch next round, or 0 to stop (keeps topping up until the
+    user got `count` non-duplicate images)."""
+    deficit = count - queued
+    if deficit <= 0 or killed == 0 or round_no >= MAX_FETCH_ROUNDS - 1:
+        return 0
+    return deficit
 
 def _caption(name, label, tag, url=None):
     c = f"{html.escape(name)} • {html.escape(label)} • {html.escape(tag)}"
@@ -412,6 +424,9 @@ async def _fetch_and_send(chat_id, uid, name, skey, tag, count, bot: Bot, force_
         sender_done = asyncio.Event()
         sent = 0
         send_errors = []
+        # image items handed to the sender this fetch (written in worker thread,
+        # only read after the worker round joins back — safe)
+        queued = {"n": 0}
 
         async def sender():
             nonlocal sent
@@ -447,6 +462,8 @@ async def _fetch_and_send(chat_id, uid, name, skey, tag, count, bot: Bot, force_
 
         def on_download(filepath, filename, url):
             if _APP_LOOP:
+                if _is_image(filepath):
+                    queued["n"] += 1
                 _APP_LOOP.call_soon_threadsafe(
                     send_queue.put_nowait, (filepath, filename, url)
                 )
@@ -462,7 +479,16 @@ async def _fetch_and_send(chat_id, uid, name, skey, tag, count, bot: Bot, force_
         net_config["download_callback"] = on_download
         net_config["on_site_down"] = on_site_down
         try:
-            await asyncio.to_thread(_run_worker, skey, tag, net_config, count)
+            # Dedup top-up: phash-duplicates are killed inside the worker, so keep
+            # fetching only the deficit until the user really has `count` fresh images.
+            want = count
+            for round_no in range(MAX_FETCH_ROUNDS):
+                killed = await asyncio.to_thread(_run_worker, skey, tag, net_config, want)
+                more = _next_round(count, queued["n"], killed, round_no)
+                if not more:
+                    break
+                print(f"[DEDUP] round {round_no + 1}: {killed} duplicate(s) removed, fetching {more} more for {tag}")
+                want = more
         finally:
             # Worker is done, so every download is queued. Sentinel drains the
             # queue; the sender flushes the tail and exits.

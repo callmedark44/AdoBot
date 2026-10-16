@@ -24,7 +24,7 @@ pkgver() {
 package() {
   cd AdoBot
   install -dm755 "$pkgdir/usr/share/adobot/workers" "$pkgdir/usr/share/adobot/database" "$pkgdir/usr/bin"
-  install -Dm644 bot.py shared.py bot_data.py ado_tags.json -t "$pkgdir/usr/share/adobot/"
+  install -Dm644 bot.py shared.py bot_data.py dedup_store.py ado_tags.json -t "$pkgdir/usr/share/adobot/"
   install -Dm644 workers/*.py -t "$pkgdir/usr/share/adobot/workers/"
   touch "$pkgdir/usr/share/adobot/database/.keep"
   printf '#!/bin/sh\nexec /usr/bin/python /usr/share/adobot/bot.py "$@"\n' > "$pkgdir/usr/bin/adobot"
